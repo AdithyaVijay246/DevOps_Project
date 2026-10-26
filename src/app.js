@@ -1,4 +1,3 @@
-// Zero-dependency booking API built on Node's http module. All data lives in memory.
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');

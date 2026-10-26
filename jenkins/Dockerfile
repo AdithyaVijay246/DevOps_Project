@@ -1,4 +1,3 @@
-# Jenkins LTS with Node.js 20 and curl, so the pipeline can run npm and the smoke test
 FROM jenkins/jenkins:lts-jdk17
 
 USER root

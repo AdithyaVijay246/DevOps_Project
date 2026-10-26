@@ -5,38 +5,79 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hospital Appointment Booking</title>
 <style>
+  :root {
+    --bg: #f3f5f8;
+    --card: #fff;
+    --text: #1b2a41;
+    --muted: #64708a;
+    --line: #dde3eb;
+    --brand: #1f5fbf;
+    --brand-dark: #184c99;
+    --ok: #1d7a3a;
+    --ok-bg: #e7f5ec;
+    --err: #b23a3a;
+    --err-bg: #fbeaea;
+  }
   * { box-sizing: border-box; }
-  body { font-family: system-ui, sans-serif; background: #f4f6f9; color: #1b2a41; margin: 0; padding: 2rem 1rem; }
-  main { max-width: 560px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0, 0, 0, .08); }
-  h1 { font-size: 1.4rem; margin-top: 0; }
-  h2 { font-size: 1.1rem; margin-top: 2rem; }
-  label { display: block; margin-top: .8rem; font-size: .9rem; font-weight: 600; }
-  input, select, button { font: inherit; width: 100%; padding: .5rem; margin-top: .3rem; border: 1px solid #c8d0db; border-radius: 4px; }
-  button { background: #1f5fbf; color: #fff; border: 0; cursor: pointer; margin-top: 1.2rem; }
-  button:hover { background: #184c99; }
-  #msg { margin-top: .8rem; font-weight: 600; min-height: 1.2em; }
-  #msg.ok { color: #1d7a3a; }
-  #msg.err { color: #b23a3a; }
-  ul { list-style: none; padding: 0; }
-  li { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .6rem 0; border-bottom: 1px solid #e6eaf0; font-size: .95rem; }
-  li button { width: auto; margin: 0; padding: .3rem .7rem; background: #b23a3a; }
-  li button:hover { background: #8f2e2e; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 2rem 1rem; line-height: 1.4; }
+  main { max-width: 620px; margin: 0 auto; }
+  header { margin-bottom: 1.25rem; }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  header p { margin: 0; color: var(--muted); }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+  h2 { font-size: 1.05rem; margin: 0 0 1rem; display: flex; align-items: center; gap: .5rem; }
+  .count { background: var(--bg); color: var(--muted); font-size: .8rem; font-weight: 600; border-radius: 999px; padding: .1rem .55rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem 1rem; }
+  .full { grid-column: 1 / -1; }
+  label { display: block; font-size: .85rem; font-weight: 600; color: var(--muted); }
+  input, select { font: inherit; color: inherit; width: 100%; padding: .55rem .6rem; margin-top: .3rem; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  input:focus, select:focus, button:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; border-color: var(--brand); }
+  button { font: inherit; font-weight: 600; border: 0; border-radius: 6px; cursor: pointer; }
+  #book { width: 100%; margin-top: 1.1rem; padding: .7rem; background: var(--brand); color: #fff; }
+  #book:hover:not(:disabled) { background: var(--brand-dark); }
+  #book:disabled { opacity: .55; cursor: not-allowed; }
+  #msg { margin-top: .9rem; padding: .6rem .8rem; border-radius: 6px; font-weight: 600; font-size: .95rem; }
+  #msg:empty { display: none; }
+  #msg.ok { color: var(--ok); background: var(--ok-bg); }
+  #msg.err { color: var(--err); background: var(--err-bg); }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .75rem 0; border-top: 1px solid var(--line); }
+  li:first-child { border-top: 0; padding-top: 0; }
+  .who { font-weight: 600; }
+  .when { color: var(--muted); font-size: .9rem; }
+  .cancel { padding: .35rem .8rem; background: transparent; color: var(--err); border: 1px solid var(--err); }
+  .cancel:hover { background: var(--err-bg); }
+  .empty { color: var(--muted); }
+  @media (max-width: 520px) {
+    .grid { grid-template-columns: 1fr; }
+    section { padding: 1rem; }
+  }
 </style>
 </head>
 <body>
 <main>
-  <h1>Hospital Appointment Booking</h1>
+  <header>
+    <h1>Hospital Appointment Booking</h1>
+    <p>Pick a doctor and an open slot to book a visit.</p>
+  </header>
 
-  <label>Patient name <input id="name" placeholder="Full name"></label>
-  <label>Department <select id="dept"><option value="">All</option></select></label>
-  <label>Doctor <select id="doctor"></select></label>
-  <label>Date <input id="date" type="date"></label>
-  <label>Open slots <select id="slot"></select></label>
-  <button id="book">Book appointment</button>
-  <div id="msg"></div>
+  <section>
+    <h2>Book an appointment</h2>
+    <div class="grid">
+      <label class="full">Patient name <input id="name" placeholder="Full name" autocomplete="name"></label>
+      <label>Department <select id="dept"><option value="">All departments</option></select></label>
+      <label>Doctor <select id="doctor"></select></label>
+      <label>Date <input id="date" type="date"></label>
+      <label>Time <select id="slot"></select></label>
+    </div>
+    <button id="book">Book appointment</button>
+    <div id="msg" role="status"></div>
+  </section>
 
-  <h2>Appointments</h2>
-  <ul id="list"></ul>
+  <section>
+    <h2>Appointments <span class="count" id="count">0</span></h2>
+    <ul id="list"></ul>
+  </section>
 </main>
 
 <script>
@@ -46,12 +87,24 @@ let allDoctors = [];
 
 const getJson = async (url) => (await fetch(url)).json();
 
+function today() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function prettyDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
 async function init() {
   allDoctors = await getJson('/api/doctors');
   [...new Set(allDoctors.map((d) => d.department))].forEach((dept) => {
     $('dept').add(new Option(dept, dept));
   });
-  $('date').value = new Date().toISOString().slice(0, 10);
+  $('date').min = today();
+  $('date').value = today();
   await loadDoctors();
   await loadList();
 }
@@ -68,18 +121,30 @@ async function loadSlots() {
   const id = $('doctor').value;
   const date = $('date').value;
   $('slot').innerHTML = '';
-  if (!id || !date) return;
-  const slots = await getJson(`/api/doctors/${id}/slots?date=${date}`);
-  slots.forEach((s) => $('slot').add(new Option(s, s)));
+  const slots = id && date ? await getJson(`/api/doctors/${id}/slots?date=${date}`) : [];
+  if (slots.length) {
+    slots.forEach((s) => $('slot').add(new Option(s, s)));
+  } else {
+    $('slot').add(new Option(date ? 'No open slots' : 'Pick a date first', ''));
+  }
+  $('slot').disabled = !slots.length;
+  $('book').disabled = !slots.length;
 }
 
 async function loadList() {
   const appointments = await getJson('/api/appointments');
+  $('count').textContent = appointments.length;
   $('list').innerHTML = appointments.map((a) => {
     const doctor = allDoctors.find((d) => d.id === a.doctorId);
-    return `<li><span>${escapeHtml(a.patientName)} with ${doctor ? doctor.name : 'doctor ' + a.doctorId}
-      on ${a.date} at ${a.time}</span><button data-id="${a.id}">Cancel</button></li>`;
-  }).join('') || '<li>No appointments yet.</li>';
+    const doctorText = doctor ? `${doctor.name}, ${doctor.department}` : `Doctor ${a.doctorId}`;
+    return `<li>
+      <div>
+        <div class="who">${escapeHtml(a.patientName)}</div>
+        <div class="when">${doctorText} &middot; ${prettyDate(a.date)} at ${a.time}</div>
+      </div>
+      <button class="cancel" data-id="${a.id}">Cancel</button>
+    </li>`;
+  }).join('') || '<li class="empty">No appointments yet.</li>';
 }
 
 function showMessage(text, ok) {
@@ -88,6 +153,7 @@ function showMessage(text, ok) {
 }
 
 $('book').onclick = async () => {
+  $('book').disabled = true;
   const res = await fetch('/api/appointments', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -100,6 +166,7 @@ $('book').onclick = async () => {
   });
   const body = await res.json();
   showMessage(res.ok ? 'Booked!' : body.error, res.ok);
+  if (res.ok) $('name').value = '';
   await loadSlots();
   await loadList();
 };

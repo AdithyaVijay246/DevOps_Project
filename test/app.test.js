@@ -6,7 +6,7 @@ let server;
 let base;
 
 beforeEach(async () => {
-  server = createServer(); // fresh in-memory state for every test
+  server = createServer();
   await new Promise((resolve) => server.listen(0, resolve));
   base = `http://localhost:${server.address().port}`;
 });
