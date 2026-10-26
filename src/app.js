@@ -79,6 +79,10 @@ function createServer() {
         (a) => a.doctorId === doctor.id && a.date === date && a.time === time
       );
       if (taken) return send(res, 409, { error: 'That slot is already booked' });
+      const sameDay = appointments.some(
+        (a) => a.patientName.toLowerCase() === patientName.toLowerCase()
+      );
+      if (sameDay) return send(res, 409, { error: `${patientName} already has an appointment that day` });
       const appointment = { id: nextId++, patientName, doctorId: doctor.id, date, time };
       appointments.push(appointment);
       return send(res, 201, appointment);

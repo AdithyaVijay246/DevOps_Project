@@ -74,3 +74,15 @@ test('canceling frees the slot', async () => {
   assert.strictEqual(del.status, 204);
   assert.ok((await openSlots()).includes('09:00'));
 });
+
+test('limits a patient to one appointment per day', async () => {
+  await book(booking);
+  const res = await book({ ...booking, patientName: 'ravi', time: '10:00' });
+  assert.strictEqual(res.status, 409);
+});
+
+test('lets a patient book again on a different day', async () => {
+  await book(booking);
+  const res = await book({ ...booking, date: '2026-11-03', time: '10:00' });
+  assert.strictEqual(res.status, 201);
+});
