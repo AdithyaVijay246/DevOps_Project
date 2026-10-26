@@ -13,6 +13,18 @@ beforeEach(async () => {
 
 afterEach(() => new Promise((resolve) => server.close(resolve)));
 
+const book = (body) =>
+  fetch(`${base}/api/appointments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+const booking = { patientName: 'Ravi', doctorId: 1, date: '2026-11-02', time: '09:00' };
+
+const openSlots = async () =>
+  (await fetch(`${base}/api/doctors/1/slots?date=2026-11-02`)).json();
+
 test('health check returns ok', async () => {
   const res = await fetch(`${base}/health`);
   assert.strictEqual(res.status, 200);
@@ -30,4 +42,35 @@ test('filters doctors by department, case-insensitive', async () => {
   const list = await res.json();
   assert.strictEqual(list.length, 1);
   assert.strictEqual(list[0].name, 'Dr. Meera Iyer');
+});
+
+test('books an appointment', async () => {
+  const res = await book(booking);
+  assert.strictEqual(res.status, 201);
+  const appt = await res.json();
+  assert.strictEqual(appt.id, 1);
+  assert.strictEqual(appt.patientName, 'Ravi');
+});
+
+test('rejects a double booking', async () => {
+  await book(booking);
+  const res = await book({ ...booking, patientName: 'Sita' });
+  assert.strictEqual(res.status, 409);
+});
+
+test('booked slot disappears from open slots', async () => {
+  await book(booking);
+  assert.deepStrictEqual(await openSlots(), ['10:00', '11:00']);
+});
+
+test('rejects missing fields', async () => {
+  const res = await book({ patientName: 'Ravi' });
+  assert.strictEqual(res.status, 400);
+});
+
+test('canceling frees the slot', async () => {
+  await book(booking);
+  const del = await fetch(`${base}/api/appointments/1`, { method: 'DELETE' });
+  assert.strictEqual(del.status, 204);
+  assert.ok((await openSlots()).includes('09:00'));
 });
