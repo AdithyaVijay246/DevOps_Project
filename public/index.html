@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hospital Appointment Booking</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: #f4f6f9; color: #1b2a41; margin: 0; padding: 2rem 1rem; }
+  main { max-width: 560px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0, 0, 0, .08); }
+  h1 { font-size: 1.4rem; margin-top: 0; }
+  h2 { font-size: 1.1rem; margin-top: 2rem; }
+  label { display: block; margin-top: .8rem; font-size: .9rem; font-weight: 600; }
+  input, select, button { font: inherit; width: 100%; padding: .5rem; margin-top: .3rem; border: 1px solid #c8d0db; border-radius: 4px; }
+  button { background: #1f5fbf; color: #fff; border: 0; cursor: pointer; margin-top: 1.2rem; }
+  button:hover { background: #184c99; }
+  #msg { margin-top: .8rem; font-weight: 600; min-height: 1.2em; }
+  #msg.ok { color: #1d7a3a; }
+  #msg.err { color: #b23a3a; }
+  ul { list-style: none; padding: 0; }
+  li { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .6rem 0; border-bottom: 1px solid #e6eaf0; font-size: .95rem; }
+  li button { width: auto; margin: 0; padding: .3rem .7rem; background: #b23a3a; }
+  li button:hover { background: #8f2e2e; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Hospital Appointment Booking</h1>
+
+  <label>Patient name <input id="name" placeholder="Full name"></label>
+  <label>Department <select id="dept"><option value="">All</option></select></label>
+  <label>Doctor <select id="doctor"></select></label>
+  <label>Date <input id="date" type="date"></label>
+  <label>Open slots <select id="slot"></select></label>
+  <button id="book">Book appointment</button>
+  <div id="msg"></div>
+
+  <h2>Appointments</h2>
+  <ul id="list"></ul>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+let allDoctors = [];
+
+const getJson = async (url) => (await fetch(url)).json();
+
+async function init() {
+  allDoctors = await getJson('/api/doctors');
+  [...new Set(allDoctors.map((d) => d.department))].forEach((dept) => {
+    $('dept').add(new Option(dept, dept));
+  });
+  $('date').value = new Date().toISOString().slice(0, 10);
+  await loadDoctors();
+  await loadList();
+}
+
+async function loadDoctors() {
+  const dept = $('dept').value;
+  const doctors = await getJson('/api/doctors' + (dept ? `?department=${encodeURIComponent(dept)}` : ''));
+  $('doctor').innerHTML = '';
+  doctors.forEach((d) => $('doctor').add(new Option(`${d.name} (${d.department})`, d.id)));
+  await loadSlots();
+}
+
+async function loadSlots() {
+  const id = $('doctor').value;
+  const date = $('date').value;
+  $('slot').innerHTML = '';
+  if (!id || !date) return;
+  const slots = await getJson(`/api/doctors/${id}/slots?date=${date}`);
+  slots.forEach((s) => $('slot').add(new Option(s, s)));
+}
+
+async function loadList() {
+  const appointments = await getJson('/api/appointments');
+  $('list').innerHTML = appointments.map((a) => {
+    const doctor = allDoctors.find((d) => d.id === a.doctorId);
+    return `<li><span>${escapeHtml(a.patientName)} with ${doctor ? doctor.name : 'doctor ' + a.doctorId}
+      on ${a.date} at ${a.time}</span><button data-id="${a.id}">Cancel</button></li>`;
+  }).join('') || '<li>No appointments yet.</li>';
+}
+
+function showMessage(text, ok) {
+  $('msg').textContent = text;
+  $('msg').className = ok ? 'ok' : 'err';
+}
+
+$('book').onclick = async () => {
+  const res = await fetch('/api/appointments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      patientName: $('name').value.trim(),
+      doctorId: Number($('doctor').value),
+      date: $('date').value,
+      time: $('slot').value,
+    }),
+  });
+  const body = await res.json();
+  showMessage(res.ok ? 'Booked!' : body.error, res.ok);
+  await loadSlots();
+  await loadList();
+};
+
+$('list').onclick = async (e) => {
+  const id = e.target.dataset.id;
+  if (!id) return;
+  await fetch(`/api/appointments/${id}`, { method: 'DELETE' });
+  showMessage('Appointment canceled.', true);
+  await loadSlots();
+  await loadList();
+};
+
+$('dept').onchange = loadDoctors;
+$('doctor').onchange = loadSlots;
+$('date').onchange = loadSlots;
+init();
+</script>
+</body>
+</html>
